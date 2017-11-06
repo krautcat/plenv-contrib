@@ -61,11 +61,19 @@ sub cmd_delete {
     $lib = '@' . $lib unless $lib =~ /@/;
     my($perl_ver, $lib_name) = resolve_name($lib);
 
+    my $mm_opt = $ENV{PERL_MM_OPT};
+    $mm_opt =~ s{^INSTALL_BASE=/(.*?/)+}{} if defined $mm_opt;
+    my ($current_perl_ver, $current_lib_name) = split /@/, $mm_opt, 2;
+
     my $target = "$ENV{PLENV_ROOT}/libs/$perl_ver\@$lib_name";
     die "lib '$target' doesn't exist.\n" unless -d $target;
 
     rmtree [$target], 0, 0;
     print "lib '$target' is deleted.\n";
+
+    if ($perl_ver eq $current_perl_ver && $lib_name eq $current_lib_name) {
+        kill('KILL', getppid()); # dirty, this'll work on any POSIX-compat OS
+    }
 }
 
 *cmd_rm = \&cmd_delete;
